@@ -8,3 +8,6 @@ handlers:
   script: goo-gly.py
 - url: /assets
   static_dir: assets
+- url: /goo-gly_install.xml
+  static_files: goo-gly_install.xml
+  upload: goo-gly_install.xml
