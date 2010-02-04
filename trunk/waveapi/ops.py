@@ -591,11 +591,23 @@ def CreateContext(data):
     A Context instance for this session.
   """
   context = _ContextImpl()
+  # patch start
+  # http://code.google.com/p/google-wave-resources/issues/detail?id=274&can=1&q=proxyingFor&colspec=Stars%20ID%20Type%20Status%20Priority%20Milestone%20Owner%20Summary%20Internal
+  context.extradata = {}
+  for key in data.keys():
+    context.extradata[key] = data[key]
+  # patch end
+  
   for raw_blip_data in data['blips'].values():
     context.AddBlip(raw_blip_data)
 
   # Currently only one wavelet is sent.
-  context.AddWavelet(data['wavelet'])
+  # patch start
+  # http://code.google.com/p/google-wave-resources/issues/detail?id=274&can=1&q=proxyingFor&colspec=Stars%20ID%20Type%20Status%20Priority%20Milestone%20Owner%20Summary%20Internal
+  # context.AddWavelet(data['wavelet'])
+  if data['wavelet']:
+    context.AddWavelet(data['wavelet'])
+  # patch end
 
   # Waves are not sent over the wire, but we can build the list based on the
   # wave ids of the wavelets.
