@@ -36,7 +36,7 @@
 ################################################################################
 # Module header and authors
 #
-"""Shorten URL with goo.gl
+"""URL Shortener using goo.gl
 """
 __license__ = "MIT License"
 __authors__ = [

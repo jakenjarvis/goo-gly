@@ -1,7 +1,7 @@
 <extension
 	name="goo-gly Ver2.0.1"
 	thumbnailUrl="http://goo-gly.googlecode.com/svn/trunk/assets/Goo-gly_thumbnail_250.png"
-	description="Shorten URL with goo.gl(Google URL Shortener)"
+	description="URL Shortener using goo.gl(Google URL Shortener)"
 	>
 	<version>2.0.1</version>
 	<!--
