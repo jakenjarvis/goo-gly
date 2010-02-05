@@ -42,7 +42,7 @@ __license__ = "MIT License"
 __authors__ = [
   '"Jaken" <Jaken.Jarvis@gmail.com>',
 ]
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 __pychecker__ = '' #'no-callinit no-classattr'
 
 ################################################################################
