@@ -108,20 +108,20 @@ def OnDocumentChanged(properties, context):
         proxyingFor = ""
     logging.debug("  proxyingFor: %s" % proxyingFor)
 
+    blip = context.GetBlipById(properties['blipId'])
+
     # Judg mode
     param = JudgMode(proxyingFor)
     if not IsMode(param, param_all):
         # All未指定の場合はツールバークリック
-        # Blipを全てチェックする
-        for blip in context.GetBlips():
-            mode = 0
-            googlylinkflg = False
-            for note in blip.GetAnnotations():
-                if "goo-gly.appspot.com/link" in note.name:
-                    googlylinkflg = True
-                    mode = JudgMode(note.value)
-            if googlylinkflg:
-                editSelectToolbar(blip, mode)
+        mode = 0
+        googlylinkflg = False
+        for note in blip.GetAnnotations():
+            if "goo-gly.appspot.com/link" in note.name:
+                googlylinkflg = True
+                mode = JudgMode(note.value)
+        if googlylinkflg:
+            editSelectToolbar(blip, mode)
 
 
 def OnBlipSubmitted(properties, context):
@@ -140,40 +140,35 @@ def OnBlipSubmitted(properties, context):
     param = JudgMode(proxyingFor)
     if IsMode(param, param_all):
         editBlipDone(blip, param)
-    elif IsMode(param, param_insert) or IsMode(param, param_textreplace) or IsMode(param, param_linkreplace) or IsMode(param, param_replace):
+    elif IsMode(param, param_insert | param_textreplace | param_linkreplace | param_replace):
         editBlipDone(blip, param)
     elif not IsMode(param, param_all):
         # All未指定の場合はツールバークリック
-        # Blipを全てチェックする
-        for blip in context.GetBlips():
-            mode = 0
-            googlylinkflg = False
-            for note in blip.GetAnnotations():
-                if "goo-gly.appspot.com/link" in note.name:
-                    googlylinkflg = True
-                    mode = JudgMode(note.value)
-            if googlylinkflg:
-                editSelectToolbar(blip, mode)
+        mode = 0
+        googlylinkflg = False
+        for note in blip.GetAnnotations():
+            if "goo-gly.appspot.com/link" in note.name:
+                googlylinkflg = True
+                mode = JudgMode(note.value)
+        if googlylinkflg:
+            editSelectToolbar(blip, mode)
 
 
 ################################################################################
 # Function
 ################################################################################
 def editSelectToolbar(blip, mode):
+    """ ToolbarでAnnotationをつけた場合の処理 """
     logging.debug(u"editSelectToolbar")
 
     doc = blip.GetDocument()
     elems = blip.GetElements()
 
     # Action Annotation.
-    mode = 0
     addGooglyLinkList = []
     for note in blip.GetAnnotations():
         if "goo-gly.appspot.com/link" in note.name:
             logging.debug(u"Annotation goo-gly.appspot.com/link : %s" % (note.value))
-
-            # Judg mode
-            mode = JudgMode(note.value)
 
             addGooglyLinkList.append((note))
             logging.debug(u"addGooglyLinkList : %s" % (note))
@@ -201,6 +196,7 @@ def editSelectToolbar(blip, mode):
 
 
 def editBlipDone(blip, mode):
+    """ Blip編集後にDoneを押下した場合の処理 """
     logging.debug(u"editBlipDone")
 
     doc = blip.GetDocument()
@@ -223,6 +219,7 @@ def editBlipDone(blip, mode):
 
 
 def editShortenUrl(blip, addLinkList, mode):
+    """ ShortenUrlの編集処理 """
     logging.debug(u"editShortenUrl mode: %s" % (mode))
 
     doc = blip.GetDocument()
@@ -316,8 +313,8 @@ def editShortenUrl(blip, addLinkList, mode):
         gapcount += (afTextLength - bfTextLength)
 
 
-
 def JudgMode(target):
+    """ Mode判定処理 """
     ret = 0
     if "all" in target:
         ret = ret | param_all
@@ -334,10 +331,12 @@ def JudgMode(target):
     return ret
 
 def IsMode(mode, target):
+    """ Mode比較処理 """
     return ((mode & target) != 0)
 
 
 def IsSelectRange(range, target):
+    """ 選択範囲に重なっているか判定する処理 """
     ret = False
     if (target.start <= range.start) and (target.end >= range.end):
         ret = True
@@ -348,28 +347,22 @@ def IsSelectRange(range, target):
     return ret
 
 
-
 def IsExecute(notename, notelink):
+    """ ShortenURLの実行対象か判定する処理 """
     ret = False
     if "link" in notename:
         if notelink.startswith("http://goo.gl/"):
-            # not replace
             ret = False
         else:
             if "link/auto" in notename:
-                # replace
                 ret = True
             elif "link/manual" in notename:
-                # replace
                 ret = True
             elif "link/wave" in notename:
-                # not replace
                 ret = False
             elif "goo-gly.appspot.com/link" in notename:
-                # not replace
                 ret = False
             else:
-                # not replace
                 ret = False
     return ret
 
