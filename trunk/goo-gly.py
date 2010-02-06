@@ -9,7 +9,7 @@
 #
 ################################################################################
 #
-# goo-gly
+# Goo-gly
 #
 # The MIT License
 #
@@ -34,22 +34,6 @@
 # THE SOFTWARE.
 #
 ################################################################################
-# Module header and authors
-#
-"""URL Shortener using goo.gl
-"""
-__license__ = "MIT License"
-__authors__ = [
-  '"Jaken" <Jaken.Jarvis@gmail.com>',
-]
-__version__ = "2.0.2"
-__pychecker__ = '' #'no-callinit no-classattr'
-
-__name__ = "Goo-gly URL Shortener using goo.gl(Google URL Shortener)"
-__profile_url__ = "http://code.google.com/p/goo-gly/"
-__image_url__ = "http://goo-gly.appspot.com/assets/Goo-gly_icon.png"
-
-
 ################################################################################
 # Imports
 ################################################################################
@@ -63,6 +47,24 @@ from django.utils import simplejson
 import urllib
 import logging
 import sys
+
+################################################################################
+# Module header and authors
+################################################################################
+"""Goo-gly URL Shortener using goo.gl(Google URL Shortener)
+"""
+__license__ = "MIT License"
+__authors__ = [
+  '"Jaken" <Jaken.Jarvis@gmail.com>',
+]
+
+__appname__ = "Goo-gly URL Shortener using goo.gl(Google URL Shortener)"
+__version__ = "2.0.2"
+__profile_url__ = "http://code.google.com/p/goo-gly/"
+__image_url__ = "http://goo-gly.appspot.com/assets/Goo-gly_icon.png"
+
+__pychecker__ = '' #'no-callinit no-classattr'
+
 
 ################################################################################
 # Global variable
@@ -457,7 +459,7 @@ def get_short_url(uri, user):
 # Main
 ################################################################################
 if __name__ == '__main__':
-    myRobot = robot.Robot(__name__, image_url=__image_url__, version=__version__, profile_url=__profile_url__)
+    myRobot = robot.Robot(__appname__, image_url=__image_url__, version=__version__, profile_url=__profile_url__)
     myRobot.RegisterHandler(events.WAVELET_SELF_ADDED, OnWaveletSelfAdded)
     myRobot.RegisterHandler(events.DOCUMENT_CHANGED, OnDocumentChanged)
     myRobot.RegisterHandler(events.BLIP_SUBMITTED, OnBlipSubmitted)
