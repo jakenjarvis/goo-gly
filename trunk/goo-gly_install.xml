@@ -1,9 +1,9 @@
 <extension
-	name="goo-gly Ver2.0.1"
-	thumbnailUrl="http://goo-gly.googlecode.com/svn/trunk/assets/Goo-gly_thumbnail_250.png"
+	name="goo-gly Ver2.0.2"
+	thumbnailUrl="http://goo-gly.appspot.com/assets/Goo-gly_thumbnail_250.png"
 	description="URL Shortener using goo.gl(Google URL Shortener)"
 	>
-	<version>2.0.1</version>
+	<version>2.0.2</version>
 	<!--
 	goo-gly
 
@@ -30,47 +30,47 @@
 	THE SOFTWARE.
 	-->
 	<author name="Jaken"/>
-	<menuHook location="toolbar" text="Insert ShortenURL(select range)" iconUrl="http://goo-gly.googlecode.com/svn/trunk/assets/Goo-gly_icon_Insert.png">
+	<menuHook location="toolbar" text="Insert ShortenURL(select range)" iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_Insert.png">
 		<annotateSelection key="goo-gly.appspot.com/link" value="select-insert"/>
 		<addParticipants>
 			<participant id="goo-gly@appspot.com"/>
 		</addParticipants>
 	</menuHook>
-	<menuHook location="toolbar" text="Text replace ShortenURL(select range)" iconUrl="http://goo-gly.googlecode.com/svn/trunk/assets/Goo-gly_icon_TextReplace.png">
+	<menuHook location="toolbar" text="Text replace ShortenURL(select range)" iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_TextReplace.png">
 		<annotateSelection key="goo-gly.appspot.com/link" value="select-textreplace"/>
 		<addParticipants>
 			<participant id="goo-gly@appspot.com"/>
 		</addParticipants>
 	</menuHook>
-	<menuHook location="toolbar" text="Link replace ShortenURL(select range)" iconUrl="http://goo-gly.googlecode.com/svn/trunk/assets/Goo-gly_icon_LinkReplace.png">
+	<menuHook location="toolbar" text="Link replace ShortenURL(select range)" iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_LinkReplace.png">
 		<annotateSelection key="goo-gly.appspot.com/link" value="select-linkreplace"/>
 		<addParticipants>
 			<participant id="goo-gly@appspot.com"/>
 		</addParticipants>
 	</menuHook>
-	<menuHook location="toolbar" text="Replace ShortenURL(select range)" iconUrl="http://goo-gly.googlecode.com/svn/trunk/assets/Goo-gly_icon_Replace.png">
+	<menuHook location="toolbar" text="Replace ShortenURL(select range)" iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_Replace.png">
 		<annotateSelection key="goo-gly.appspot.com/link" value="select-replace"/>
 		<addParticipants>
 			<participant id="goo-gly@appspot.com"/>
 		</addParticipants>
 	</menuHook>
 
-	<menuHook location="newwavemenu" text="Create a Insert ShortenURL Wave." iconUrl="http://goo-gly.googlecode.com/svn/trunk/assets/Goo-gly_icon_Insert.png">
+	<menuHook location="newwavemenu" text="Create a Insert ShortenURL Wave." iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_Insert.png">
 		<createNewWave>
 			<participant id="goo-gly+insert@appspot.com"/>
 		</createNewWave>
 	</menuHook>
-	<menuHook location="newwavemenu" text="Create a Text replace ShortenURL Wave." iconUrl="http://goo-gly.googlecode.com/svn/trunk/assets/Goo-gly_icon_TextReplace.png">
+	<menuHook location="newwavemenu" text="Create a Text replace ShortenURL Wave." iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_TextReplace.png">
 		<createNewWave>
 			<participant id="goo-gly+textreplace@appspot.com"/>
 		</createNewWave>
 	</menuHook>
-	<menuHook location="newwavemenu" text="Create a Link replace ShortenURL Wave." iconUrl="http://goo-gly.googlecode.com/svn/trunk/assets/Goo-gly_icon_LinkReplace.png">
+	<menuHook location="newwavemenu" text="Create a Link replace ShortenURL Wave." iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_LinkReplace.png">
 		<createNewWave>
 			<participant id="goo-gly+linkreplace@appspot.com"/>
 		</createNewWave>
 	</menuHook>
-	<menuHook location="newwavemenu" text="Create a Replace ShortenURL Wave." iconUrl="http://goo-gly.googlecode.com/svn/trunk/assets/Goo-gly_icon_Replace.png">
+	<menuHook location="newwavemenu" text="Create a Replace ShortenURL Wave." iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_Replace.png">
 		<createNewWave>
 			<participant id="goo-gly+replace@appspot.com"/>
 		</createNewWave>
