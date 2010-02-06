@@ -1,11 +1,11 @@
 <extension
-	name="goo-gly Ver2.0.2"
+	name="Goo-gly Ver2.0.2"
 	thumbnailUrl="http://goo-gly.appspot.com/assets/Goo-gly_thumbnail_250.png"
 	description="URL Shortener using goo.gl(Google URL Shortener)"
 	>
 	<version>2.0.2</version>
 	<!--
-	goo-gly
+	Goo-gly
 
 	The MIT License
 
