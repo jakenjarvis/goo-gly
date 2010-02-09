@@ -59,7 +59,7 @@ __authors__ = [
 ]
 
 __appname__ = "Goo-gly URL Shortener using goo.gl(Google URL Shortener)"
-__version__ = "2.0.2"
+__version__ = "2.0.3"
 __profile_url__ = "http://code.google.com/p/goo-gly/"
 __image_url__ = "http://goo-gly.appspot.com/assets/Goo-gly_icon.png"
 
@@ -69,12 +69,16 @@ __pychecker__ = '' #'no-callinit no-classattr'
 ################################################################################
 # Global variable
 ################################################################################
-param_all         = 1
-param_select      = 2
-param_insert      = 16
-param_textreplace = 32
-param_linkreplace = 64
-param_replace     = 128
+param_all         = 0x0001
+param_select      = 0x0002
+param_insert      = 0x0010
+param_textreplace = 0x0020
+param_linkreplace = 0x0040
+param_replace     = 0x0080
+
+_link_annotation_ = "goo-gly.appspot.com/link"
+_keep_annotation_ = "goo-gly.appspot.com/keep"
+
 
 ################################################################################
 # Events handler
@@ -83,11 +87,7 @@ def OnWaveletSelfAdded(properties, context):
     """ Robot自身がWaveに参加した時の処理 """
     logging.info("OnWaveletSelfAdded()")
 
-    if "proxyingFor" in context.extradata:
-        proxyingFor = context.extradata['proxyingFor'].lower()
-    else:
-        proxyingFor = ""
-    logging.debug("  proxyingFor: %s" % proxyingFor)
+    proxyingFor = GetProxyingFor(context)
 
     # Judg mode
     param = JudgMode(proxyingFor)
@@ -98,7 +98,7 @@ def OnWaveletSelfAdded(properties, context):
             mode = 0
             googlylinkflg = False
             for note in blip.GetAnnotations():
-                if "goo-gly.appspot.com/link" in note.name:
+                if _link_annotation_ in note.name:
                     googlylinkflg = True
                     mode = JudgMode(note.value)
             if googlylinkflg:
@@ -109,11 +109,7 @@ def OnDocumentChanged(properties, context):
     """ 文書内容変更時の処理 """
     logging.info("OnDocumentChanged()")
 
-    if "proxyingFor" in context.extradata:
-        proxyingFor = context.extradata['proxyingFor'].lower()
-    else:
-        proxyingFor = ""
-    logging.debug("  proxyingFor: %s" % proxyingFor)
+    proxyingFor = GetProxyingFor(context)
 
     blip = context.GetBlipById(properties['blipId'])
 
@@ -124,7 +120,7 @@ def OnDocumentChanged(properties, context):
         mode = 0
         googlylinkflg = False
         for note in blip.GetAnnotations():
-            if "goo-gly.appspot.com/link" in note.name:
+            if _link_annotation_ in note.name:
                 googlylinkflg = True
                 mode = JudgMode(note.value)
         if googlylinkflg:
@@ -135,11 +131,7 @@ def OnBlipSubmitted(properties, context):
     """ Blipの送信（Done）時の処理 """
     logging.info("OnBlipSubmitted()")
 
-    if "proxyingFor" in context.extradata:
-        proxyingFor = context.extradata['proxyingFor'].lower()
-    else:
-        proxyingFor = ""
-    logging.debug("  proxyingFor: %s" % proxyingFor)
+    proxyingFor = GetProxyingFor(context)
 
     blip = context.GetBlipById(properties['blipId'])
 
@@ -147,14 +139,27 @@ def OnBlipSubmitted(properties, context):
     param = JudgMode(proxyingFor)
     if IsMode(param, param_all):
         editBlipDone(blip, param)
-    elif IsMode(param, param_insert | param_textreplace | param_linkreplace | param_replace):
-        editBlipDone(blip, param)
-    elif not IsMode(param, param_all):
+
+    elif IsMode(param, param_select):
         # All未指定の場合はツールバークリック
         mode = 0
         googlylinkflg = False
         for note in blip.GetAnnotations():
-            if "goo-gly.appspot.com/link" in note.name:
+            if _link_annotation_ in note.name:
+                googlylinkflg = True
+                mode = JudgMode(note.value)
+        if googlylinkflg:
+            editSelectToolbar(blip, mode)
+
+    elif IsMode(param, param_insert | param_textreplace | param_linkreplace | param_replace):
+        editBlipDone(blip, param)
+
+    else:
+        # All未指定の場合はツールバークリック
+        mode = 0
+        googlylinkflg = False
+        for note in blip.GetAnnotations():
+            if _link_annotation_ in note.name:
                 googlylinkflg = True
                 mode = JudgMode(note.value)
         if googlylinkflg:
@@ -174,15 +179,13 @@ def editSelectToolbar(blip, mode):
     # Action Annotation.
     addGooglyLinkList = []
     for note in blip.GetAnnotations():
-        if "goo-gly.appspot.com/link" in note.name:
-            logging.debug(u"Annotation goo-gly.appspot.com/link : %s" % (note.value))
-
+        if _link_annotation_ in note.name:
+            logging.debug(u"Annotation %s : %s" % (_link_annotation_, note.value))
             addGooglyLinkList.append((note))
-            logging.debug(u"addGooglyLinkList : %s" % (note))
 
     addLinkList = []
     for glinknote in addGooglyLinkList:
-        doc.DeleteAnnotationsInRange(glinknote.range, "goo-gly.appspot.com/link")
+        doc.DeleteAnnotationsInRange(glinknote.range, _link_annotation_)
 
         for note in blip.GetAnnotations():
             if IsExecute(note.name, note.value):
@@ -255,17 +258,49 @@ def editShortenUrl(blip, addLinkList, mode):
             rangeSpace = document.Range(gapnoterange.end    , gapnoterange.end + 1)
             rangeLink  = document.Range(gapnoterange.end + 1, gapnoterange.end + 1 + len(shorturl))
 
-            tolerance = 5 # 許容範囲
-            nextlinktext = doc.GetText()[gapnoterange.end: gapnoterange.end + 1 + len(shorturl) + tolerance]
-            if shorturl in nextlinktext:
+            logging.debug(u"rangeText: %s" % (rangeText))
+
+            findflg = False
+            keepnote = GetKeepAnnotation(blip, gapnoterange)
+            if keepnote != None:
+                findlinktext = doc.GetText()[keepnote.range.start: keepnote.range.end]
+                logging.debug(u"findlinktext: %s" % (findlinktext))
+
+                index = findlinktext.rfind(shorturl)
+                if index != -1:
+                    findflg = True
+                    rangeKeep = document.Range(gapnoterange.start, gapnoterange.start + index + len(shorturl))
+                    rangeNewLink = document.Range(gapnoterange.start + index, gapnoterange.start + index + len(shorturl))
+
+                    logging.debug(u"keepnote.range: %s" % (keepnote.range))
+                    logging.debug(u"rangeKeep: %s" % (rangeKeep))
+                    logging.debug(u"rangeNewLink: %s" % (rangeNewLink))
+
+                    if not((keepnote.range.start == rangeKeep.start) and (keepnote.range.end == rangeKeep.end)):
+                        logging.debug(u"Remake KeepAnnotation : %s" % (keepnote.value))
+                        # KeepAnnotationがズレ過ぎなので作り直す。
+                        doc.DeleteAnnotationsInRange(keepnote.range, _keep_annotation_)
+
+                        doc.SetAnnotation(gapnoterange, packobject['name'], packobject['value'])
+                        doc.SetAnnotation(rangeNewLink, 'link/auto', shorturl)
+                        # not work!
+                        doc.SetAnnotation(rangeKeep, _keep_annotation_, keepnote.value)
+                else:
+                    findflg = False
+                    # 無効なAnnotationになってしまっているので削除
+                    doc.DeleteAnnotationsInRange(keepnote.range, _keep_annotation_)
+            else:
+                findflg = False
+
+            if findflg:
                 logging.debug(u"find shorter link")
 
                 # 消える場合があるのでリンク張りなおしする。
-                doc.DeleteAnnotationsInRange(rangeText, "link/auto")
-                doc.DeleteAnnotationsInRange(rangeText, "link/manual")
+                #doc.DeleteAnnotationsInRange(rangeText, "link/auto")
+                #doc.DeleteAnnotationsInRange(rangeText, "link/manual")
 
-                doc.SetAnnotation(gapnoterange, packobject['name'], packobject['value'])
-                doc.SetAnnotation(rangeLink, 'link/manual', shorturl)
+                #doc.SetAnnotation(gapnoterange, packobject['name'], packobject['value'])
+                #doc.SetAnnotation(rangeLink, 'link/manual', shorturl)
 
             else:
                 logging.debug(u"insert shorter link: %s" % (shorturl))
@@ -274,20 +309,24 @@ def editShortenUrl(blip, addLinkList, mode):
                 doc.SetTextInRange(gapnoterange, text)
 
                 # 消える場合があるのでリンク張りなおしする。
-                doc.DeleteAnnotationsInRange(rangeText, "link/auto")
-                doc.DeleteAnnotationsInRange(rangeText, "link/manual")
+                #doc.DeleteAnnotationsInRange(rangeText, "link/auto")
+                #doc.DeleteAnnotationsInRange(rangeText, "link/manual")
 
                 doc.SetAnnotation(gapnoterange, packobject['name'], packobject['value'])
-                doc.SetAnnotation(rangeLink, 'link/manual', shorturl)
+                #doc.SetAnnotation(rangeLink, 'link/manual', shorturl)
 
                 afTextLength = len(text)
 
-                #doc.InsertText(rangeSpace.start, " ")
-                #doc.DeleteAnnotationsInRange(rangeSpace, packobject['name'])
-                #doc.InsertText(rangeLink.start, "%s" % (shorturl))
-                #doc.SetAnnotation(rangeLink, 'link/manual', shorturl)
-
-                #afTextLength += 1 + len(shorturl)
+                # Keep Annotation
+                keep = MakeKeepAnnotationValue(
+                    mode,
+                    packobject['name'],
+                    packobject['text'],
+                    text,
+                    longurl,
+                    shorturl
+                    )
+                doc.SetAnnotation(rangeText, _keep_annotation_, keep)
 
         elif IsMode(mode, param_textreplace):
             ##################################################
@@ -299,6 +338,17 @@ def editShortenUrl(blip, addLinkList, mode):
 
             afTextLength = len(shorturl)
 
+            # Keep Annotation
+            keep = MakeKeepAnnotationValue(
+                mode,
+                packobject['name'],
+                packobject['text'],
+                shorturl,
+                longurl,
+                shorturl
+                )
+            doc.SetAnnotation(rangeLink, _keep_annotation_, keep)
+
         elif IsMode(mode, param_linkreplace):
             ##################################################
             logging.debug(u"**** mode: %s" % (mode))
@@ -306,19 +356,70 @@ def editShortenUrl(blip, addLinkList, mode):
             doc.DeleteAnnotationsInRange(gapnoterange, packobject['name'])
             doc.SetAnnotation(gapnoterange, 'link/manual', shorturl)
 
+            # Keep Annotation
+            keep = MakeKeepAnnotationValue(
+                mode,
+                packobject['name'],
+                packobject['text'],
+                packobject['text'],
+                longurl,
+                shorturl
+                )
+            doc.SetAnnotation(gapnoterange, _keep_annotation_, keep)
+
         elif IsMode(mode, param_replace):
             ##################################################
             logging.debug(u"**** mode: %s" % (mode))
 
-            #rangeLink  = document.Range(gapnoterange.start, gapnoterange.start + len(shorturl))
+            rangeLink  = document.Range(gapnoterange.start, gapnoterange.start + len(shorturl))
             doc.SetTextInRange(gapnoterange, shorturl)
             #doc.SetAnnotation(rangeLink, 'link/auto', shorturl)
 
             afTextLength = len(shorturl)
 
+            # Keep Annotation
+            keep = MakeKeepAnnotationValue(
+                mode,
+                packobject['name'],
+                packobject['text'],
+                shorturl,
+                longurl,
+                shorturl
+                )
+            doc.SetAnnotation(rangeLink, _keep_annotation_, keep)
 
         gapcount += (afTextLength - bfTextLength)
 
+
+def MakeKeepAnnotationValue(mode, name, oldtext, newtext, longurl, shorturl):
+    keep = {
+        'mode': mode,
+        'name': name,
+        'oldtext': oldtext,
+        'newtext': newtext,
+        'longurl': longurl,
+        'shorturl': shorturl
+        }
+    logging.debug("MakeKeepAnnotationValue : %s" % keep)
+    return keep
+
+def GetKeepAnnotation(blip, range):
+    ret = None
+    for note in blip.GetAnnotations():
+        if _keep_annotation_ in note.name:
+            if (note.range.start == range.start): # and (note.range.end >= range.end)
+                ret = note
+                break
+    return ret
+
+def IsAnnotation(blip, target):
+    """ 指定したAnnotationが存在するか判定する処理 """
+    ret = False
+    for note in blip.GetAnnotations():
+        if target in note.name:
+            ret = True
+            break
+    return ret
 
 def JudgMode(target):
     """ Mode判定処理 """
@@ -366,13 +467,25 @@ def IsExecute(notename, notelink):
             elif "link/manual" in notename:
                 ret = True
             elif "link/wave" in notename:
+                #TrueでもOKだと思う
                 ret = False
-            elif "goo-gly.appspot.com/link" in notename:
+            elif _link_annotation_ in notename:
+                ret = False
+            elif _keep_annotation_ in notename:
                 ret = False
             else:
                 ret = False
     return ret
 
+
+def GetProxyingFor(context):
+    """ Robotのパラメータ取得 """
+    if "proxyingFor" in context.extradata:
+        proxyingFor = context.extradata['proxyingFor'].lower()
+    else:
+        proxyingFor = ""
+    logging.debug("GetProxyingFor() proxyingFor: %s" % proxyingFor)
+    return proxyingFor
 
 
 ################################################################################
