@@ -59,7 +59,7 @@ __authors__ = [
 ]
 
 __appname__ = "Goo-gly URL Shortener using goo.gl(Google URL Shortener)"
-__version__ = "2.0.3"
+__version__ = "2.0.4"
 __profile_url__ = "http://code.google.com/p/goo-gly/"
 __image_url__ = "http://goo-gly.appspot.com/assets/Goo-gly_icon.png"
 
