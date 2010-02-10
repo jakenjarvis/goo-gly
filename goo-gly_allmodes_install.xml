@@ -1,9 +1,9 @@
 <extension
-	name="Goo-gly Ver2.0.3"
+	name="Goo-gly Ver2.0.4"
 	thumbnailUrl="http://goo-gly.appspot.com/assets/Goo-gly_thumbnail_250.png"
-	description="URL Shortener using goo.gl(Google URL Shortener)"
+	description="URL Shortener using goo.gl(Google URL Shortener) *Installer that can use all modes.*"
 	>
-	<version>2.0.3</version>
+	<version>2.0.4</version>
 	<!--
 	Goo-gly
 

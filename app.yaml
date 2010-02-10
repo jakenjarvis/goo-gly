@@ -15,3 +15,7 @@ handlers:
 - url: /goo-gly_install.xml
   static_files: goo-gly_install.xml
   upload: goo-gly_install.xml
+
+- url: /goo-gly_allmodes_install.xml
+  static_files: goo-gly_allmodes_install.xml
+  upload: goo-gly_allmodes_install.xml
