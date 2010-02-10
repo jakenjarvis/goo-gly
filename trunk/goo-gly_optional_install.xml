@@ -1,7 +1,7 @@
 <extension
-	name="Goo-gly Ver2.0.4"
-	thumbnailUrl="http://goo-gly.appspot.com/assets/Goo-gly_thumbnail_250.png"
-	description="URL Shortener using goo.gl(Google URL Shortener) *Installer that can use all modes.*"
+	name="Goo-gly Optional"
+	thumbnailUrl="http://goo-gly.appspot.com/assets/Goo-gly_optional_thumbnail.png"
+	description="URL Shortener using goo.gl(Google URL Shortener)"
 	>
 	<version>2.0.4</version>
 	<!--
@@ -30,12 +30,14 @@
 	THE SOFTWARE.
 	-->
 	<author name="Jaken"/>
+<!--
 	<menuHook location="toolbar" text="Insert ShortenURL(select range)" iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_Insert.png">
 		<annotateSelection key="goo-gly.appspot.com/link" value="select-insert"/>
 		<addParticipants>
 			<participant id="goo-gly@appspot.com"/>
 		</addParticipants>
 	</menuHook>
+-->
 	<menuHook location="toolbar" text="Text replace ShortenURL(select range)" iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_TextReplace.png">
 		<annotateSelection key="goo-gly.appspot.com/link" value="select-textreplace"/>
 		<addParticipants>
