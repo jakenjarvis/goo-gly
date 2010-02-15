@@ -1,5 +1,5 @@
 <extension
-	name="Goo-gly Optional"
+	name="Goo-gly: Extra Options"
 	thumbnailUrl="http://goo-gly.appspot.com/assets/Goo-gly_optional_thumbnail.png"
 	description="This installs URL Shortener functions beyond the recommended Insert Mode: Text Replace, Link Replace, and Replace Shortened URL."
 	>
