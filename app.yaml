@@ -12,6 +12,10 @@ handlers:
 - url: /assets
   static_dir: assets
 
+- url: /
+  static_files: index.html
+  upload: index.html
+
 - url: /goo-gly_install.xml
   static_files: goo-gly_install.xml
   upload: goo-gly_install.xml

@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+        <title>Goo-gly</title>
+        <script src="http://wave-api.appspot.com/public/embed.js" type="text/javascript"></script>
+    </head>
+    <body>
+        <h1>Welcome Goo-gly!</h1>
+        <a href="http://code.google.com/p/goo-gly/">Project page</a><br />
+        <hr />
+        <h1>Goo-gly Manual.</h1>
+        Wave link: <a href="https://wave.google.com/wave/#restored:wave:googlewave.com!w%252BLRiOxyuDC">googlewave.com!w+LRiOxyuDC</a><br />
+        <div id="waveframe1" style="width: 600px; height: 400px;"></div>
+        <hr />
+        <h1>Goo-gly Place of opinion.</h1>
+        Wave link: <a href="https://wave.google.com/wave/#restored:wave:googlewave.com!w%252BAMMleTLZC">googlewave.com!w+AMMleTLZC</a><br />
+        <div id="waveframe2" style="width: 600px; height: 400px;"></div>
+        <hr />
+        The MIT License<br />
+        Copyright (c) 2010 Jaken. (Shoji Morimoto, Jaken.Jarvis@gmail.com)<br />
+
+        <script type="text/javascript">
+            function initialize()
+            {
+                var wavePanel1 = new WavePanel('https://wave.google.com/wave/');
+                wavePanel1.setUIConfig('white', 'black', 'Arial', '13px');
+                wavePanel1.loadWave('googlewave.com!w+LRiOxyuDC');
+                wavePanel1.init(document.getElementById('waveframe1'));
+
+                var wavePanel2 = new WavePanel('https://wave.google.com/wave/');
+                wavePanel2.setUIConfig('white', 'black', 'Arial', '13px');
+                wavePanel2.loadWave('googlewave.com!w+AMMleTLZC');
+                wavePanel2.init(document.getElementById('waveframe2'));
+            }
+            initialize();
+        </script>
+    </body>
+</html>
