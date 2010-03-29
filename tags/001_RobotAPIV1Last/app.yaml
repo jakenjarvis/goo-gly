@@ -1,0 +1,25 @@
+application: goo-gly
+version: 1
+runtime: python
+api_version: 1
+
+#default_expiration: "1m"
+
+handlers:
+- url: /_wave/.*
+  script: goo-gly.py
+
+- url: /assets
+  static_dir: assets
+
+- url: /
+  static_files: index.html
+  upload: index.html
+
+- url: /goo-gly_install.xml
+  static_files: goo-gly_install.xml
+  upload: goo-gly_install.xml
+
+- url: /goo-gly_optional_install.xml
+  static_files: goo-gly_optional_install.xml
+  upload: goo-gly_optional_install.xml
