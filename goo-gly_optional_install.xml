@@ -3,7 +3,7 @@
 	thumbnailUrl="http://goo-gly.appspot.com/assets/Goo-gly_optional_thumbnail.png"
 	description="This installs URL Shortener functions beyond the recommended Insert Mode: Text Replace, Link Replace, and Replace Shortened URL."
 	>
-	<version>2.0.4</version>
+	<version>3.0.0</version>
 	<!--
 	Goo-gly
 
@@ -29,7 +29,7 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 	-->
-	<author name="Jaken"/>
+	<author name="Jaken(Shoji Morimoto)"/>
 <!--
 	<menuHook location="toolbar" text="Insert ShortenURL(select range)" iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_Insert.png">
 		<annotateSelection key="goo-gly.appspot.com/link" value="select-insert"/>
