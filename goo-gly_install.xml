@@ -1,9 +1,9 @@
 <extension
-	name="Goo-gly Ver2.0.4"
+	name="Goo-gly Ver3.0.0"
 	thumbnailUrl="http://goo-gly.appspot.com/assets/Goo-gly_thumbnail_250.png"
 	description="URL Shortener using goo.gl: Lets you select a URL in your wave and click the Goo-gly icon to insert a shortened URL into the wave."
 	>
-	<version>2.0.4</version>
+	<version>3.0.0</version>
 	<!--
 	Goo-gly
 
@@ -29,11 +29,11 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 	-->
-	<author name="Jaken"/>
+	<author name="Jaken(Shoji Morimoto)"/>
 	<menuHook location="toolbar" text="Insert ShortenURL" iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_Insert.png">
 		<annotateSelection key="goo-gly.appspot.com/link" value="select-insert"/>
 		<addParticipants>
-			<participant id="goo-gly@appspot.com"/>
+			<participant id="goo-gly#2@appspot.com"/>
 		</addParticipants>
 	</menuHook>
 </extension>
