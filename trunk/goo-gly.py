@@ -100,7 +100,7 @@ ShortenUrl_Services = [
 ################################################################################
 def OnWaveletSelfAdded(event, wavelet):
     """ Robot自身がWaveに参加した時の処理 """
-    logging.info("OnWaveletSelfAdded()")
+    logging.info(u"OnWaveletSelfAdded()")
 
     proxyingFor = GetProxyingFor(wavelet)
 
@@ -124,12 +124,12 @@ def OnWaveletSelfAdded(event, wavelet):
 
 def OnDocumentChanged(event, wavelet):
     """ 文書内容変更時の処理 """
-    logging.info("OnDocumentChanged()")
+    logging.info(u"OnDocumentChanged()")
 
 
 def OnAnnotatedTextChanged(event, wavelet):
     """ アノテーションのテキスト変化時の処理 """
-    logging.info("OnAnnotatedTextChanged()")
+    logging.info(u"OnAnnotatedTextChanged()")
 
     proxyingFor = GetProxyingFor(wavelet)
 
@@ -150,7 +150,7 @@ def OnAnnotatedTextChanged(event, wavelet):
 
 def OnBlipSubmitted(event, wavelet):
     """ Blipの送信（Done）時の処理 """
-    logging.info("OnBlipSubmitted()")
+    logging.info(u"OnBlipSubmitted()")
 
     proxyingFor = GetProxyingFor(wavelet)
 
@@ -200,7 +200,7 @@ def OnBlipSubmitted(event, wavelet):
 
 def OnOperationError(event, wavelet):
     """ OperationError時の処理 """
-    logging.info("OnOperationError()")
+    logging.info(u"OnOperationError()")
     if isinstance(event, events.OperationError):
         logging.error(u"OperationError: id=%s, message: %s" % (event.operation_id, event.error_message))
 
@@ -513,7 +513,7 @@ def editShortenUrl(event, wavelet, blip, lstEnabledAnnotations):
             logging.debug(u"delete link")
             #blip.range(packobject['start'], packobject['end']).clear_annotation(packobject['name'])
             blip.range(packobject['start'], packobject['end']).delete()
-            packobject['newtext'] = ""
+            packobject['newtext'] = u""
             packobject['newlength'] = len(packobject['newtext'])
 
         else:
@@ -552,7 +552,7 @@ def editShortenUrl(event, wavelet, blip, lstEnabledAnnotations):
                 if IsMode(packobject['mode'], param_insert):
                     ##################################################
                     textLeft = packobject['oldtext']
-                    textMiddle = " "
+                    textMiddle = u" "
                     textRight = packobject['shorturl']
 
                     if packobject['exectype'] == exectype_link_ltos:
@@ -563,7 +563,7 @@ def editShortenUrl(event, wavelet, blip, lstEnabledAnnotations):
                         else:
                             logging.debug(u"case 3")
                             textLeft = packobject['longurl']
-                            textMiddle = " "
+                            textMiddle = u" "
                             textRight = packobject['shorturl']
 
                     packobject['newtext'] = u"%s%s%s" % (textLeft, textMiddle, textRight)
@@ -714,7 +714,7 @@ def FindPackObject(lstEnabledAnnotations, uuid):
     return packobject
 
 def PackagingSaveAnnotationValue(pack):
-    save = ",".join([
+    save = u",".join([
         unicode(pack['mode']),
         unicode(pack['name']),
         base64.b64encode(pack['oldtext'].encode("utf-8")),
@@ -723,7 +723,7 @@ def PackagingSaveAnnotationValue(pack):
         base64.b64encode(pack['shorturl'].encode("utf-8")),
         base64.b64encode(pack['value'].encode("utf-8")) #oldlink
         ])
-    logging.debug("PackagingSaveAnnotationValue : %s" % save)
+    logging.debug(u"PackagingSaveAnnotationValue : %s" % save)
     return save
 
 def UnpackagingSaveAnnotationValue(save):
@@ -750,7 +750,7 @@ def UnpackagingSaveAnnotationValue(save):
             'shorturl': unicode(save['shorturl']),
             'oldlink': unicode(save['longurl'])  # dummy
             }
-    logging.debug("UnpackagingSaveAnnotationValue : %s" % pack)
+    logging.debug(u"UnpackagingSaveAnnotationValue : %s" % pack)
     return pack
 
 def JudgMode(target):
@@ -808,7 +808,7 @@ def GetExecuteType(notename, notelink):
         else:
             ret = exectype_link_ltos
     elif "link/wave" in notename:
-        logging.debug("link/wave : %s" % notelink)
+        logging.debug(u"link/wave : %s" % notelink)
         #exectype_linkでもOKだと思う
         ret = exectype_none
     elif link_annotation in notename:
@@ -823,16 +823,16 @@ def GetExecuteType(notename, notelink):
 
 def GetProxyingFor(wavelet):
     """ Robotのパラメータ取得 """
-    logging.debug("robot_address: %s" % wavelet.robot_address)
+    logging.debug(u"robot_address: %s" % wavelet.robot_address)
     robotid = wavelet.robot_address.split('@')[0]
     if '#' in robotid:
         robotid = robotid.split('#')[0]
-    logging.debug("robotid: %s" % robotid)
+    logging.debug(u"robotid: %s" % robotid)
     if '+' in robotid:
         proxyingFor = robotid.split('+', 1)[1].lower()
     else:
         proxyingFor = ""
-    logging.debug("GetProxyingFor() proxyingFor: %s" % proxyingFor)
+    logging.debug(u"GetProxyingFor() proxyingFor: %s" % proxyingFor)
     return proxyingFor
 
 def PackObjectComp(x, y):
