@@ -1,0 +1,80 @@
+<extension
+	name="Goo-gly: Extra Options"
+	thumbnailUrl="http://goo-gly.appspot.com/assets/Goo-gly_optional_thumbnail.png"
+	description="This installs URL Shortener functions beyond the recommended Insert Mode: Text Replace, Link Replace, and Replace Shortened URL."
+	>
+	<version>3.0.0</version>
+	<!--
+	Goo-gly
+
+	The MIT License
+
+	Copyright (c) 2010 Jaken. (Shoji Morimoto, Jaken.Jarvis@gmail.com)
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
+	-->
+	<author name="Jaken(Shoji Morimoto)"/>
+<!--
+	<menuHook location="toolbar" text="Insert ShortenURL(select range)" iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_Insert.png">
+		<annotateSelection key="goo-gly.appspot.com/link" value="select-insert"/>
+		<addParticipants>
+			<participant id="goo-gly@appspot.com"/>
+		</addParticipants>
+	</menuHook>
+-->
+	<menuHook location="toolbar" text="Text replace ShortenURL(select range)" iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_TextReplace.png">
+		<annotateSelection key="goo-gly.appspot.com/link" value="select-textreplace"/>
+		<addParticipants>
+			<participant id="goo-gly@appspot.com"/>
+		</addParticipants>
+	</menuHook>
+	<menuHook location="toolbar" text="Link replace ShortenURL(select range)" iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_LinkReplace.png">
+		<annotateSelection key="goo-gly.appspot.com/link" value="select-linkreplace"/>
+		<addParticipants>
+			<participant id="goo-gly@appspot.com"/>
+		</addParticipants>
+	</menuHook>
+	<menuHook location="toolbar" text="Replace ShortenURL(select range)" iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_Replace.png">
+		<annotateSelection key="goo-gly.appspot.com/link" value="select-replace"/>
+		<addParticipants>
+			<participant id="goo-gly@appspot.com"/>
+		</addParticipants>
+	</menuHook>
+
+	<menuHook location="newwavemenu" text="Create a Insert ShortenURL Wave." iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_Insert.png">
+		<createNewWave>
+			<participant id="goo-gly+insert@appspot.com"/>
+		</createNewWave>
+	</menuHook>
+	<menuHook location="newwavemenu" text="Create a Text replace ShortenURL Wave." iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_TextReplace.png">
+		<createNewWave>
+			<participant id="goo-gly+textreplace@appspot.com"/>
+		</createNewWave>
+	</menuHook>
+	<menuHook location="newwavemenu" text="Create a Link replace ShortenURL Wave." iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_LinkReplace.png">
+		<createNewWave>
+			<participant id="goo-gly+linkreplace@appspot.com"/>
+		</createNewWave>
+	</menuHook>
+	<menuHook location="newwavemenu" text="Create a Replace ShortenURL Wave." iconUrl="http://goo-gly.appspot.com/assets/Goo-gly_icon_Replace.png">
+		<createNewWave>
+			<participant id="goo-gly+replace@appspot.com"/>
+		</createNewWave>
+	</menuHook>
+</extension>
