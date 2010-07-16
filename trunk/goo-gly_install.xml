@@ -1,9 +1,9 @@
 <extension
-	name="Goo-gly Ver3.0.0"
+	name="Goo-gly"
 	thumbnailUrl="http://goo-gly.appspot.com/assets/Goo-gly_thumbnail_250.png"
 	description="URL Shortener using goo.gl: Lets you select a URL in your wave and click the Goo-gly icon to insert a shortened URL into the wave."
 	>
-	<version>3.0.0</version>
+	<version>3.0.1</version>
 	<!--
 	Goo-gly
 

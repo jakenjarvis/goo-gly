@@ -3,7 +3,7 @@
 	thumbnailUrl="http://goo-gly.appspot.com/assets/Goo-gly_optional_thumbnail.png"
 	description="This installs URL Shortener functions beyond the recommended Insert Mode: Text Replace, Link Replace, and Replace Shortened URL."
 	>
-	<version>3.0.0</version>
+	<version>3.0.1</version>
 	<!--
 	Goo-gly
 
