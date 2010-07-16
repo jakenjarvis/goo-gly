@@ -64,7 +64,7 @@ __authors__ = [
 ]
 
 __appname__ = "Goo-gly URL Shortener using goo.gl(Google URL Shortener)"
-__version__ = "3.0.0"
+__version__ = "3.0.1"
 __profile_url__ = "http://code.google.com/p/goo-gly/"
 __image_url__ = "http://goo-gly.appspot.com/assets/Goo-gly_icon.png"
 
@@ -101,6 +101,12 @@ ShortenUrl_Services = [
 def OnWaveletSelfAdded(event, wavelet):
     """ Robot自身がWaveに参加した時の処理 """
     logging.info(u"OnWaveletSelfAdded()")
+
+    wave_id = wavelet.wave_id.replace(u"+", u"%252B").replace(u"#", u"%23")
+    wave_url = u"https://wave.google.com/wave/#restored:wave:%s" % (wave_id)
+    wave_short_url = get_short_url(wave_url, None)
+    #wavelet.root_blip.append(u"Current wave url: %s" % (wave_short_url))
+    wavelet.root_blip.reply().append(u"Current wave url: %s" % (wave_short_url))
 
     proxyingFor = GetProxyingFor(wavelet)
 
@@ -331,7 +337,7 @@ def editBlipDone(event, wavelet, blip, mode):
 
 def editShortenUrl(event, wavelet, blip, lstEnabledAnnotations):
     """ ShortenUrlの編集処理 """
-    logging.debug(u"editShortenUrl")
+    logging.debug(u"editShortenUrl() Ver.%s" % (__version__))
 
     #--------------------------------------------------
     # Adjust Annotations and Linking
@@ -967,7 +973,7 @@ def get_short_url(uri, user):
 if __name__ == '__main__':
     myRobot = robot.Robot(__appname__, image_url=__image_url__, profile_url=__profile_url__)
     myRobot.register_handler(events.WaveletSelfAdded, OnWaveletSelfAdded, context=[events.Context.ALL])
-    myRobot.register_handler(events.DocumentChanged, OnDocumentChanged, context=[events.Context.SELF])
+    #myRobot.register_handler(events.DocumentChanged, OnDocumentChanged, context=[events.Context.SELF])
     myRobot.register_handler(events.AnnotatedTextChanged, OnAnnotatedTextChanged, context=[events.Context.SELF], filter=".*goo-gly.*")
     myRobot.register_handler(events.BlipSubmitted, OnBlipSubmitted, context=[events.Context.SELF])
     myRobot.register_handler(events.OperationError, OnOperationError)
