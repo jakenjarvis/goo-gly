@@ -20,11 +20,12 @@ This module defines the Element class and the derived classes.
 """
 
 
+import base64
 import logging
 import sys
 
 import util
-import random
+
 
 class Element(object):
   """Elements are non-text content within a document.
@@ -34,9 +35,13 @@ class Element(object):
   the element represents.
 
   Properties of elements are both accessible directly (image.url) and through
-  the properties dictionary (image.properties['url']). In general Element
+  the get method (image.get('url')). In general, Element
   should not be instantiated by robots, but rather rely on the derived classes.
   """
+
+  # INLINE_BLIP_TYPE is not a separate type since it shouldn't be instantiated,
+  # only be used for introspection
+  INLINE_BLIP_TYPE = "INLINE_BLIP"
 
   def __init__(self, element_type, **properties):
     """Initializes self with the specified type and any properties.
@@ -274,23 +279,11 @@ class Gadget(Element):
   def serialize(self):
     """Gadgets allow for None values."""
     return {'properties': self._properties, 'type': self._type}
-
+  
   def keys(self):
     """Get the valid keys for this gadget."""
     return [x for x in self._properties.keys() if x != 'url']
 
-class Marquee(Gadget):
-
-  def __init__(self, text=''):
-    super(Marquee, self).__init__('http://imagine-it.org/google/wave/marquee.xml', {'text': text})
-
-
-class Blink(Gadget):
-
-  def __init__(self, text=''):
-    width = len(text)*9
-    url = 'http://imagine-it.org/google/wave/blink.php?width=%s' % width
-    super(Blink, self).__init__(url, {'text': text})
 
 class Installer(Element):
   """An installer element."""
@@ -322,17 +315,42 @@ class Image(Element):
                   for key, value in props.items()])
     return apply(Image, [], props)
 
-class LolCat(Image):
-  """An image element."""
+class Attachment(Element):
+  """An attachment element.
 
-  class_type = 'IMAGE'
+  To create a new attachment, caption and data are needed.
+  mimeType, attachmentId and attachmentUrl are sent via events.
+  """
 
-  def __init__(self, mini=False): 
-    rand_img = random.randint(1000, 1600)
-    url = 'http://lolcat.com/images/lolcats/%s.jpg' % rand_img
-    if mini:
-      url = 'http://lolcat.com/images/lolcats/sml_%s.jpg' % rand_img
-    super(LolCat, self).__init__(url=url)
+  class_type = 'ATTACHMENT'
+
+  def __init__(self, caption=None, data=None, mimeType=None, attachmentId=None,
+                attachmentUrl=None):
+    Attachment.originalData = data
+    super(Attachment, self).__init__(Attachment.class_type, caption=caption,
+          data=data, mimeType=mimeType, attachmentId=attachmentId,
+          attachmentUrl=attachmentUrl)
+
+  def __getattr__(self, key):
+    if key and key == 'data':
+      return Attachment.originalData
+    return super(Attachment, self).__getattr__(key)
+
+  @classmethod
+  def from_props(cls, props):
+    props = dict([(key.encode('utf-8'), value)
+                  for key, value in props.items()])
+    return apply(Attachment, [], props)
+
+  def serialize(self):
+    """Serializes the attachment object into JSON.
+
+    The attachment data is base64 encoded.
+    """
+
+    if self.data:
+      self._properties['data'] = base64.encodestring(self.data)
+    return super(Attachment, self).serialize()
 
 
 def is_element(cls):

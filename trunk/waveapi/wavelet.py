@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.4
 #
 # Copyright (C) 2009 Google Inc.
 #
@@ -18,6 +18,7 @@
 
 import blip
 import errors
+import util
 
 
 class DataDocs(object):
@@ -66,8 +67,11 @@ class DataDocs(object):
 
 class Participants(object):
   """Class modelling a set of participants in pythonic way."""
-  
+
+  #: Designates full access (read/write) role.
   ROLE_FULL = "FULL"
+
+  #: Designates read-only role.
   ROLE_READ_ONLY = "READ_ONLY"
 
   def __init__(self, participants, roles, wave_id, wavelet_id, operation_queue):
@@ -93,11 +97,11 @@ class Participants(object):
     self._participants.add(participant_id)
 
   def get_role(self, participant_id):
-    """Return the role for the given participant_id"""
+    """Return the role for the given participant_id."""
     return self._roles.get(participant_id, Participants.ROLE_FULL)
 
   def set_role(self, participant_id, role):
-    """Return the role for the given participant_id"""
+    """Sets the role for the given participant_id."""
     if role != Participants.ROLE_FULL and role != Participants.ROLE_READ_ONLY:
       raise ValueError(role + ' is not a valid role')
     self._operation_queue.wavelet_modify_participant_role(
@@ -128,6 +132,7 @@ class Tags(object):
 
   def append(self, tag):
     """Appends a tag if it doesn't already exist."""
+    tag = util.force_unicode(tag)
     if tag in self._tags:
       return
     self._operation_queue.wavelet_modify_tag(
@@ -136,6 +141,7 @@ class Tags(object):
 
   def remove(self, tag):
     """Removes a tag if it exists."""
+    tag = util.force_unicode(tag)
     if not tag in self._tags:
       return
     self._operation_queue.wavelet_modify_tag(
@@ -147,6 +153,40 @@ class Tags(object):
     return list(self._tags)
 
 
+class BlipThread(object):
+  """ Models a group of blips in a wave."""
+
+  def __init__(self, id, location, blip_ids, all_blips, operation_queue):
+    self._id = id
+    self._location = location
+    self._blip_ids = blip_ids
+    self._all_blips = all_blips
+    self._operation_queue = operation_queue
+
+  @property
+  def id(self):
+    """Returns this thread's id."""
+    return self._id
+
+  @property
+  def location(self):
+    """Returns this thread's location."""
+    return self._location
+
+  @property
+  def blip_ids(self):
+    """Returns the blip IDs in this thread."""
+    return self._blip_ids
+
+  @property
+  def blips(self):
+    """Returns the blips in this thread."""
+    blips = []
+    for blip_id in self._blip_ids:
+      blips.append(self._all_blips[blip_id])
+    return blips
+
+
 class Wavelet(object):
   """Models a single wavelet.
 
@@ -154,17 +194,15 @@ class Wavelet(object):
   To guarantee that all blips are available, specify Context.ALL for events.
   """
 
-  def __init__(self, json, blips, robot, operation_queue):
+  def __init__(self, json, blips, operation_queue):
     """Inits this wavelet with JSON data.
 
     Args:
       json: JSON data dictionary from Wave server.
       blips: a dictionary object that can be used to resolve blips.
-      robot: the robot owning this wavelet.
       operation_queue: an OperationQueue object to be used to
         send any generated operations to.
     """
-    self._robot = robot
     self._operation_queue = operation_queue
     self._wave_id = json.get('waveId')
     self._wavelet_id = json.get('waveletId')
@@ -193,6 +231,13 @@ class Wavelet(object):
       self._root_blip = self._blips[self._root_blip_id]
     else:
       self._root_blip = None
+    root_thread_data = json.get('rootThread')
+    if root_thread_data:
+      self._root_thread = BlipThread('',
+                                  root_thread_data.get('location'),
+                                  root_thread_data.get('blipIds', []),
+                                  blips,
+                                  operation_queue)
     self._robot_address = None
 
   @property
@@ -240,19 +285,21 @@ class Wavelet(object):
     return self._participants
 
   @property
+  def root_thread(self):
+    """Returns the root thread of this wavelet."""
+    return self._root_thread
+
+  @property
   def tags(self):
     """Returns a list of tags for this wavelet."""
     return self._tags
-
-  @property
-  def robot(self):
-    """The robot that owns this wavelet."""
-    return self._robot
 
   def _get_title(self):
     return self._title
 
   def _set_title(self, title):
+    title = util.force_unicode(title)
+
     if title.find('\n') != -1:
       raise errors.Error('Wavelet title should not contain a newline ' +
                          'character. Specified: ' + title)
@@ -319,12 +366,16 @@ class Wavelet(object):
     set. Any modifications made to this copy will be done using the
     proxy_for_id, i.e. the robot+<proxy_for_id>@appspot.com address will
     be used.
+
+    If the wavelet was retrieved using the Active Robot API, that is
+    by fetch_wavelet, then the address of the robot must be added to the
+    wavelet by setting wavelet.robot_address before calling proxy_for().
     """
+    util.check_is_valid_proxy_for_id(proxy_for_id)
     self.add_proxying_participant(proxy_for_id)
     operation_queue = self.get_operation_queue().proxy_for(proxy_for_id)
     res = Wavelet(json={},
                   blips={},
-                  robot=self.robot,
                   operation_queue=operation_queue)
     res._wave_id = self._wave_id
     res._wavelet_id = self._wavelet_id
@@ -377,18 +428,20 @@ class Wavelet(object):
     """Replies to the conversation in this wavelet.
 
     Args:
-      initial_content: if set, start with this content.
+      initial_content: If set, start with this (string) content.
 
     Returns:
       A transient version of the blip that contains the reply.
     """
     if not initial_content:
-      initial_content = '\n'
+      initial_content = u'\n'
+    initial_content = util.force_unicode(initial_content)
     blip_data = self._operation_queue.wavelet_append_blip(
        self.wave_id, self.wavelet_id, initial_content)
 
     instance = blip.Blip(blip_data, self._blips, self._operation_queue)
     self._blips._add(instance)
+    self.root_blip.child_blip_ids.append(instance.blip_id)
     return instance
 
   def delete(self, todelete):

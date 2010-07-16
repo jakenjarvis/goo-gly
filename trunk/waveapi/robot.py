@@ -20,7 +20,6 @@ This module provides the Robot class and RobotListener interface,
 as well as some helper functions for web requests and responses.
 """
 
-import base64
 import logging
 import sys
 
@@ -30,19 +29,16 @@ except ImportError:
   pass
 
 import simplejson
-
 import blip
-import events
-import ops
-import util
-import wavelet
 import errors
-
-# We only import oauth when we need it
-oauth = None
+import ops
+import simplejson
+import wavelet
+import waveservice
 
 DEFAULT_PROFILE_URL = (
     'http://code.google.com/apis/wave/extensions/robots/python-tutorial.html')
+
 
 class Robot(object):
   """Robot metadata class.
@@ -66,13 +62,13 @@ class Robot(object):
     self._name = name
     self._verification_token = None
     self._st = None
-    self._consumer_key = None
-    self._consumer_secret = None
-    self._server_rpc_base = None
+    self._waveservice = waveservice.WaveService()
     self._profile_handler = None
     self._image_url = image_url
     self._profile_url = profile_url
     self._capability_hash = 0
+    self._consumer_key = None
+    self._http_post = None
 
   @property
   def name(self):
@@ -89,33 +85,17 @@ class Robot(object):
     """Returns the URL of an info page for the robot."""
     return self._profile_url
 
-
-  def http_post(self, url, data, headers):
-    """Execute an http post.
-
-    Monkey patch this method to use something other than
-    the default urllib.
-
-    Args:
-        url: to post to
-        body: post body
-        headers: extra headers to pass along
-    Returns:
-        response_code, returned_page
-    """
-    import urllib2
-    req = urllib2.Request(url,
-                          data=data,
-                          headers=headers)
-    try:
-      f = urllib2.urlopen(req)
-      return f.code, f.read()
-    except urllib2.URLError, e:
-      return e.code, e.read()
-
   def get_verification_token_info(self):
     """Returns the verification token and ST parameter."""
     return self._verification_token, self._st
+
+  def get_waveservice(self):
+    """Return the currently installed waveservice if available.
+
+    Throws an exception if no service is installed."""
+    if self._waveservice is None:
+      raise errors.Error('Oauth has not been setup')
+    return self._waveservice
 
   def capabilities_hash(self):
     """Return the capabilities hash as a hex string."""
@@ -148,6 +128,7 @@ class Robot(object):
     if type(context) == list:
       context = ','.join(context)
     self._capability_hash = (self._capability_hash * 13 +
+                             hash(ops.PROTOCOL_VERSION) +
                              hash(event_class.type) +
                              hash(context) +
                              hash(filter)) & 0xfffffff
@@ -166,8 +147,14 @@ class Robot(object):
     self._verification_token = token
     self._st = st
 
+  def set_http_post(self, http_post):
+    """Set the http_post handler to use when posting."""
+    self._http_post = http_post
+    if self._waveservice:
+      self._waveservice.set_http_post(http_post)
+
   def setup_oauth(self, consumer_key, consumer_secret,
-                 server_rpc_base='http://gmodules.com/api/rpc'):
+      server_rpc_base='https://www-opensocial.googleusercontent.com/api/rpc'):
     """Configure this robot to use the oauth'd json rpc.
 
     Args:
@@ -179,18 +166,12 @@ class Robot(object):
           For wave preview, http://gmodules.com/api/rpc should be used.
           For wave sandbox, http://sandbox.gmodules.com/api/rpc should be used.
     """
-    # Import oauth inline and using __import__ for pyexe compatibility
-    # when oauth is not installed.
-    global oauth
-    __import__('waveapi.oauth')
-    oauth = sys.modules['waveapi.oauth']
-
-    self._server_rpc_base = server_rpc_base
     self._consumer_key = consumer_key
-    self._consumer_secret = consumer_secret
-    self._oauth_signature_method = oauth.OAuthSignatureMethod_HMAC_SHA1()
-    self._oauth_consumer = oauth.OAuthConsumer(self._consumer_key,
-                                               self._consumer_secret)
+    self._waveservice = waveservice.WaveService(
+        consumer_key='google.com:' + consumer_key,
+        consumer_secret=consumer_secret,
+        server_rpc_base=server_rpc_base,
+        http_post=self._http_post)
 
   def register_profile_handler(self, handler):
     """Sets the profile handler for this robot.
@@ -202,68 +183,6 @@ class Robot(object):
     """
     self._profile_handler = handler
 
-  def _hash(self, value):
-    """return b64encoded sha1 hash of value."""
-    try:
-      hashlib = __import__('hashlib') # 2.5
-      hashed = hashlib.sha1(value)
-    except ImportError:
-      import sha # deprecated
-      hashed = sha.sha(value)
-    return base64.b64encode(hashed.digest())
-
-
-  def make_rpc(self, operations):
-    """Make an rpc call, submitting the specified operations."""
-
-    if not oauth or not self._oauth_consumer.key:
-      raise errors.Error('OAuth has not been configured')
-    if (not type(operations) == list and
-        not isinstance(operations, ops.OperationQueue)):
-      operations = [operations]
-
-    rpcs = [op.serialize(method_prefix='wave') for op in operations]
-
-    post_body = simplejson.dumps(rpcs)
-    body_hash = self._hash(post_body)
-    params = {
-      'oauth_consumer_key': 'google.com:' + self._oauth_consumer.key,
-      'oauth_timestamp': oauth.generate_timestamp(),
-      'oauth_nonce': oauth.generate_nonce(),
-      'oauth_version': oauth.OAuthRequest.version,
-      'oauth_body_hash': body_hash,
-    }
-    oauth_request = oauth.OAuthRequest.from_request('POST',
-                                                    self._server_rpc_base,
-                                                    parameters=params)
-    oauth_request.sign_request(self._oauth_signature_method,
-                               self._oauth_consumer,
-                               None)
-    code, content = self.http_post(
-        url=oauth_request.to_url(),
-        data=post_body,
-        headers={'Content-Type': 'application/json'})
-    logging.info(oauth_request.to_url())
-    if code != 200:
-      logging.info(oauth_request.to_url())
-      logging.info(content)
-      raise IOError('HttpError ' + str(code))
-    return simplejson.loads(content)
-  
-  def _first_rpc_result(self, result):
-    """result is returned from make_rpc. Get the first data record
-    or throw an exception if it was an error."""
-    if type(result) == list:
-      result = result[0]
-    error = result.get('error')
-    if error:
-      raise errors.Error('RPC Error' + str(error['code'])
-          + ': ' + error['message'])
-    data = result.get('data')
-    if data:
-      return data
-    raise errors.Error('RPC Error: No data record.')
-
   def capabilities_xml(self):
     """Return this robot's capabilities as an XML string."""
     lines = []
@@ -271,7 +190,7 @@ class Robot(object):
       for payload in payloads:
         handler, event_class, context, filter = payload
         line = '  <w:capability name="%s"' % capability
-        if context: 
+        if context:
           if type(context) == list:
             context = ','.join(context)
           line += ' context="%s"' % context
@@ -313,47 +232,11 @@ class Robot(object):
               'profileUrl': self.profile_url}
     return simplejson.dumps(data)
 
-  def _wavelet_from_json(self, json, pending_ops):
-    """Construct a wavelet from the passed json.
-
-    The json should either contain a wavelet and a blips record that
-    define those respective object. The returned wavelet
-    will be constructed using the passed pending_ops
-    OperationQueue.
-    Alternatively the json can be the result of a previous
-    wavelet.serialize() call. In that case the blips will
-    be contaned in the wavelet record.
-    """
-    if isinstance(json, basestring):
-      json = simplejson.loads(json)
-
-    blips = {}
-    for blip_id, raw_blip_data in json['blips'].items():
-      blips[blip_id] = blip.Blip(raw_blip_data, blips, pending_ops)
-
-    if 'wavelet' in json:
-      raw_wavelet_data = json['wavelet']
-    elif 'waveletData' in json:
-      raw_wavelet_data = json['waveletData']
-    else:
-      raw_wavelet_data = json
-    wavelet_blips = {}
-    wavelet_id = raw_wavelet_data['waveletId']
-    wave_id = raw_wavelet_data['waveId']
-    for blip_id, instance in blips.items():
-      if instance.wavelet_id == wavelet_id and instance.wave_id == wave_id:
-        wavelet_blips[blip_id] = instance
-    result = wavelet.Wavelet(raw_wavelet_data, wavelet_blips, self, pending_ops)
-    robot_address = json.get('robotAddress')
-    if robot_address:
-      result.robot_address = robot_address
-    return result
-
   def process_events(self, json):
     """Process an incoming set of events encoded as json."""
     parsed = simplejson.loads(json)
     pending_ops = ops.OperationQueue()
-    event_wavelet = self._wavelet_from_json(parsed, pending_ops)
+    event_wavelet = self.get_waveservice()._wavelet_from_json(parsed, pending_ops)
 
     for event_data in parsed['events']:
       for payload in self._handlers.get(event_data['type'], []):
@@ -392,48 +275,10 @@ class Robot(object):
           actual waveid/waveletid and blipId for the root blip.
 
     """
-    operation_queue = ops.OperationQueue(proxy_for_id)
-    if not isinstance(message, basestring):
-      message = simplejson.dumps(message)
+    return self.get_waveservice().new_wave(
+        domain, participants, message, proxy_for_id, submit)
 
-    blip_data, wavelet_data = operation_queue.robot_create_wavelet(
-        domain=domain,
-        participants=participants,
-        message=message)
-
-    blips = {}
-    root_blip = blip.Blip(blip_data, blips, operation_queue)
-    blips[root_blip.blip_id] = root_blip
-    created = wavelet.Wavelet(wavelet_data,
-                              blips=blips,
-                              robot=self,
-                              operation_queue=operation_queue)
-    if submit:
-      result = self._first_rpc_result(self.submit(created))
-      if type(result) == list:
-        result = result[0]
-      # Currently, data is sometimes wrapped in an outer 'data'
-      # Remove these 2 lines when that is no longer an issue.
-      if 'data' in result and len(result) == 2:
-        result = result['data']
-      if 'blipId' in result:
-        blip_data['blipId'] = result['blipId']
-        wavelet_data['rootBlipId'] = result['blipId']
-      for field in 'waveId', 'waveletId':
-        if field in result:
-          wavelet_data[field] = result[field]
-          blip_data[field] = result[field]
-      blips = {}
-      root_blip = blip.Blip(blip_data, blips, operation_queue)
-      blips[root_blip.blip_id] = root_blip
-      created = wavelet.Wavelet(wavelet_data,
-                                blips=blips,
-                                robot=self,
-                                operation_queue=operation_queue)
-
-    return created
-
-  def fetch_wavelet(self, wave_id, wavelet_id, proxy_for_id=None):
+  def fetch_wavelet(self, wave_id, wavelet_id=None, proxy_for_id=None):
     """Use the REST interface to fetch a wave and return it.
 
     The returned wavelet contains a snapshot of the state of the
@@ -446,10 +291,8 @@ class Robot(object):
     robot.submit() or by calling .submit_with() on the returned
     wavelet.
     """
-    operation_queue = ops.OperationQueue(proxy_for_id)
-    operation_queue.robot_fetch_wave(wave_id, wavelet_id)
-    result = self._first_rpc_result(self.make_rpc(operation_queue))
-    return self._wavelet_from_json(result, ops.OperationQueue(proxy_for_id))
+    return self.get_waveservice().fetch_wavelet(
+        wave_id, wavelet_id, proxy_for_id)
 
   def blind_wavelet(self, json, proxy_for_id=None):
     """Construct a blind wave from a json string.
@@ -473,16 +316,12 @@ class Robot(object):
       submited to the server, either by calling robot.submit() or
       by calling .submit_with() on the returned wavelet.
     """
-    return self._wavelet_from_json(json, ops.OperationQueue(proxy_for_id))
+    return self.get_waveservice().blind_wavelet(json, proxy_for_id)
 
   def submit(self, wavelet_to_submit):
     """Submit the pending operations associated with wavelet_to_submit.
 
-    Typically the wavelet will be the result of open_wavelet, blind_wavelet
-    or new_wavelet.
+    Typically the wavelet will be the result of fetch_wavelet, blind_wavelet
+    or new_wave.
     """
-    pending = wavelet_to_submit.get_operation_queue()
-    res = self.make_rpc(pending)
-    pending.clear()
-    logging.info('submit returned:%s', res)
-    return res
+    return self.get_waveservice().submit(wavelet_to_submit)

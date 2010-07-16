@@ -67,7 +67,7 @@ class TestBlip(unittest.TestCase):
     child = self.new_blip(blipId=CHILD_BLIP_ID,
                           parentBlipId=ROOT_BLIP_ID)
     self.assertEquals(ROOT_BLIP_ID, root.blip_id)
-    self.assertEquals(set([CHILD_BLIP_ID]), root.child_blip_ids)
+    self.assertEquals([CHILD_BLIP_ID], root.child_blip_ids)
     self.assertEquals(set(TEST_BLIP_DATA['contributors']), root.contributors)
     self.assertEquals(TEST_BLIP_DATA['creator'], root.creator)
     self.assertEquals(TEST_BLIP_DATA['content'], root.text)
@@ -204,6 +204,12 @@ class TestBlip(unittest.TestCase):
     inline = blip.insert_inline_blip(3)
     self.assertEquals(blip.blip_id, inline.parent_blip_id)
     self.assertEquals(3, len(self.all_blips))
+
+  def testInsertInlineBlipCantInsertAtTheBeginning(self):
+    blip = self.new_blip(blipId=ROOT_BLIP_ID)
+    self.assertEquals(1, len(self.all_blips))
+    self.assertRaises(IndexError, blip.insert_inline_blip, 0)
+    self.assertEquals(1, len(self.all_blips))
 
   def testDocumentModify(self):
     blip = self.new_blip(blipId=ROOT_BLIP_ID)
@@ -352,6 +358,17 @@ class TestBlip(unittest.TestCase):
     blip.append('bold', bundled_annotations=[('style/fontWeight', 'bold')])
     self.assertEqual(2, len(blip.annotations))
     self.assertEqual('bold', blip.annotations['style/fontWeight'][0].value)
+
+  def testInlineBlipOffset(self):
+    offset = 14
+    self.new_blip(blipId=ROOT_BLIP_ID,
+                  childBlipIds=[CHILD_BLIP_ID],
+                  elements={str(offset):
+                      {'type': element.Element.INLINE_BLIP_TYPE,
+                       'properties': {'id': CHILD_BLIP_ID}}})
+    child = self.new_blip(blipId=CHILD_BLIP_ID,
+                          parentBlipId=ROOT_BLIP_ID)
+    self.assertEqual(offset, child.inline_blip_offset)
 
 if __name__ == '__main__':
   unittest.main()

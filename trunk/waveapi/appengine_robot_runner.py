@@ -97,7 +97,7 @@ class RobotEventHandler(webapp.RequestHandler):
     logging.info('Incoming: %s', json_body)
     json_response = self._robot.process_events(json_body)
     logging.info('Outgoing: %s', json_response)
-    
+
     sys.stdout = saved_stdout
 
     # Build the response.
@@ -148,17 +148,17 @@ def create_robot_webapp(robot, debug=False, extra_handlers=None):
   """Returns an instance of webapp.WSGIApplication with robot handlers."""
   if not extra_handlers:
     extra_handlers = []
-  return webapp.WSGIApplication([('/_wave/capabilities.xml',
+  return webapp.WSGIApplication([('.*/_wave/capabilities.xml',
                                   lambda: CapabilitiesHandler(
                                                      robot.capabilities_xml,
                                                      'application/xml')),
-                                 ('/_wave/robot/profile',
+                                 ('.*/_wave/robot/profile',
                                   lambda: ProfileHandler(
                                                      robot.profile_json,
                                                      'application/json')),
-                                 ('/_wave/robot/jsonrpc',
+                                 ('.*/_wave/robot/jsonrpc',
                                   lambda: RobotEventHandler(robot)),
-                                 ('/_wave/verify_token',
+                                 ('.*/_wave/verify_token',
                                   lambda: RobotVerifyTokenHandler(robot)),
                                 ] + extra_handlers,
                                 debug=debug)
@@ -196,6 +196,6 @@ def run(robot, debug=False, log_errors=True, extra_handlers=None):
   # arguments from the enclosing scope.
   if log_errors:
     robot.register_handler(events.OperationError, operation_error_handler)
-  robot.http_post = appengine_post
+  robot.set_http_post(appengine_post)
   app = create_robot_webapp(robot, debug, extra_handlers)
   run_wsgi_app(app)

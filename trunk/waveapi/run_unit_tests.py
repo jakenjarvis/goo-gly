@@ -24,6 +24,7 @@ import ops_test
 import robot_test
 import util_test
 import wavelet_test
+import search_test
 
 
 def RunUnitTests():
@@ -36,6 +37,7 @@ def RunUnitTests():
       robot_test,
       util_test,
       wavelet_test,
+      search_test,
   ]
   test_runner.RunAllTests()
 
