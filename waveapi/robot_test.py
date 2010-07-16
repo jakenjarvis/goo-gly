@@ -56,7 +56,7 @@ EVENTS_JSON = ('[{"timestamp":1242079611003,'
                     '"participantsAdded":["monty@appspot.com"]},'
                 '"type":"WAVELET_PARTICIPANTS_CHANGED"}]')
 
-TEST_JSON = '{"blips":%s,"wavelet":%s,"events":%s}' % (
+TEST_JSON = '{"blips":%s,"wavelet":%s,"events":%s, "threads": {}}' % (
     BLIP_JSON, WAVELET_JSON, EVENTS_JSON)
 
 NEW_WAVE_JSON = [{"data":
@@ -80,10 +80,10 @@ class TestRobot(unittest.TestCase):
     self.robot = robot.Robot('Testy')
 
   def testCreateWave(self):
-    self.robot.submit = lambda x: NEW_WAVE_JSON
+    self.robot.get_waveservice().submit = lambda x: NEW_WAVE_JSON
     new_wave = self.robot.new_wave('wavesandbox.com', submit=True)
     self.assertEqual('wavesandbox.com!w+LrODcLZkDlt', new_wave.wave_id)
-    self.robot.submit = lambda x: NEW_WAVE_JSON_OLD
+    self.robot.get_waveservice().submit = lambda x: NEW_WAVE_JSON_OLD
     new_wave = self.robot.new_wave('googlewave.com', submit=True)
     self.assertEqual('googlewave.com!w+VqQXQbZkCP0', new_wave.wave_id)
 
@@ -133,7 +133,7 @@ class TestRobot(unittest.TestCase):
                                 check)
     json = self.robot.process_events(TEST_JSON)
     operations = simplejson.loads(json)
-    expected = set([ops.ROBOT_NOTIFY_CAPABILITIES_HASH,
+    expected = set([ops.ROBOT_NOTIFY,
                     ops.WAVELET_APPEND_BLIP,
                     ops.WAVELET_SET_TITLE,
                     ops.DOCUMENT_APPEND_MARKUP])
@@ -168,7 +168,7 @@ class TestRobot(unittest.TestCase):
     operations = simplejson.loads(json)
 
     self.assertEqual(2, len(operations))
-    self.assertEquals(ops.ROBOT_NOTIFY_CAPABILITIES_HASH,
+    self.assertEquals(ops.ROBOT_NOTIFY,
                       operations[0]['method'])
     self.assertEquals(ops.WAVELET_APPEND_BLIP, operations[1]['method'])
     self.assertEquals('proxyid', operations[1]['params']['proxyingFor'])

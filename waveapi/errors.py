@@ -23,3 +23,6 @@ the library back to the client.
 
 class Error(Exception):
   """Base library error type."""
+
+class RpcError(Error):
+  """Wave rpc error."""

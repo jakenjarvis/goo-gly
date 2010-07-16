@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.4
 #
 # Copyright (C) 2009 Google Inc.
 #
@@ -247,6 +247,10 @@ class Blips(object):
       res[blip_id] = item.serialize()
     return res
 
+  def values(self):
+    """Return the blips themselves."""
+    return self._blips.values()
+
 
 class BlipRefs(object):
   """Represents a set of references to contents in a blip.
@@ -415,7 +419,7 @@ class BlipRefs(object):
           next = what[next_index]
           next_index = (next_index + 1) % len(what)
         if isinstance(next, str):
-          next = next.decode('utf-8')
+          next = util.force_unicode(next)
         if modify_how == BlipRefs.ANNOTATE:
           key, value = next
           blip.annotations._add_internal(key, value, start, end)
@@ -483,7 +487,7 @@ class BlipRefs(object):
         what = matched
       if what:
         if not isinstance(next, element.Element):
-          modify_action['values'] = [util.force_string(value) for value in what]
+          modify_action['values'] = [util.force_unicode(value) for value in what]
         else:
           modify_action['elements'] = what
     elif modify_how == BlipRefs.ANNOTATE:
@@ -522,7 +526,7 @@ class BlipRefs(object):
 
     You can either specify both name and value to set the
     same annotation, or supply as the first parameter something
-    that yields name/value pairs.
+    that yields name/value pairs. The name and value should both be strings.
     """
     if value is None:
       what = name
@@ -589,7 +593,7 @@ class Blip(object):
   the Document object.
   """ 
 
-  def __init__(self, json, other_blips, operation_queue):
+  def __init__(self, json, other_blips, operation_queue, reply_threads=None):
     """Inits this blip with JSON data.
 
     Args:
@@ -600,8 +604,9 @@ class Blip(object):
         in.
     """
     self._blip_id = json.get('blipId')
+    self._reply_threads = reply_threads or []
     self._operation_queue = operation_queue
-    self._child_blip_ids = set(json.get('childBlipIds', []))
+    self._child_blip_ids = list(json.get('childBlipIds', []))
     self._content = json.get('content', '')
     self._contributors = set(json.get('contributors', []))
     self._creator = json.get('creator')
@@ -644,14 +649,28 @@ class Blip(object):
 
   @property
   def child_blip_ids(self):
-    """The set of the ids of this blip's children."""
+    """The list of the ids of this blip's children."""
     return self._child_blip_ids
 
   @property
   def child_blips(self):
-    """The set of blips that are children of this blip."""
-    return set([self._other_blips[blid_id] for blid_id in self._child_blip_ids
-                if blid_id in self._other_blips])
+    """The list of blips that are children of this blip."""
+    return [self._other_blips[blid_id] for blid_id in self._child_blip_ids
+                if blid_id in self._other_blips]
+
+  @property
+  def reply_threads(self):
+    """The list of threads that are replies to this blip."""
+    return self._reply_threads
+
+  @property
+  def inline_reply_threads(self):
+    # TODO: Consider moving to constructor
+    inline_reply_threads = []
+    for reply_thread in self._reply_threads:
+      if reply_thread.location > -1:
+        inline_reply_threads.append(reply_thread)
+    return inline_reply_threads
 
   @property
   def contributors(self):
@@ -684,6 +703,21 @@ class Blip(object):
     # if parent_blip_id is None, get will also return None
     return self._other_blips.get(self._parent_blip_id)
 
+  @property
+  def inline_blip_offset(self):
+    """The offset in the parent if this blip is inline or -1 if not.
+
+    If the parent is not in the context, this function will always
+    return -1 since it can't determine the inline blip status.
+    """
+    parent = self.parent_blip
+    if not parent:
+      return -1
+    for offset, el in parent._elements.items():
+      if el.type == element.Element.INLINE_BLIP_TYPE and el.id == self.blip_id:
+        return offset
+    return -1
+
   def is_root(self):
     """Returns whether this is the root blip of a wavelet."""
     return self._parent_blip_id is None
@@ -695,13 +729,12 @@ class Blip(object):
 
   @property
   def elements(self):
-    """The elements for this document.
-
-    The elements of a document are things like forms elements, gadgets
-    that cannot be expressed as plain text. The elements property of
-    a document is a dictionary like object from index in the document
-    to element instance. In the text of the document you'll typically
-    find a space as a place holder for the element.
+    """Returns a list of elements for this document.
+    The elements of a blip are things like forms elements and gadgets
+    that cannot be expressed as plain text. In the text of the blip, you'll
+    typically find a space as a place holder for the element.
+    If you want to retrieve the element at a particular index in the blip, use
+    blip[index].value().
     """
     return self._elements.values()
 
@@ -787,6 +820,7 @@ class Blip(object):
     proxy_for_id, i.e. the robot+<proxy_for_id>@appspot.com address will
     be used.
     """
+    util.check_is_valid_proxy_for_id(proxy_for_id)
     operation_queue = self._operation_queue.proxy_for(proxy_for_id)
     res = Blip(json={},
                other_blips={},
@@ -845,6 +879,7 @@ class Blip(object):
     Args:
       markup: The markup'ed text to append.
     """
+    markup = util.force_unicode(markup)
     self._operation_queue.document_append_markup(self.wave_id,
                                                  self.wavelet_id,
                                                  self.blip_id,
@@ -855,11 +890,15 @@ class Blip(object):
     """Inserts an inline blip into this blip at a specific position.
 
     Args:
-      position: Position to insert the blip at.
+      position: Position to insert the blip at. This has to be greater than 0.
 
     Returns:
       The JSON data of the blip that was created.
     """
+    if position <= 0:
+      raise IndexError(('Illegal inline blip position: %d. Position has to ' +
+                        'be greater than 0.') % position)
+
     blip_data = self._operation_queue.document_inline_blip_insert(
         self.wave_id,
         self.wavelet_id,

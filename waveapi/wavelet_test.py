@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.4
 #
 # Copyright (C) 2009 Google Inc.
 #
@@ -39,6 +39,11 @@ TEST_WAVELET_DATA = {
     'waveId': 'test.com!w+g3h3im',
     'waveletId': 'test.com!root+conv',
     'tags': ['tag1', 'tag2'],
+    'rootThread': {
+        'id': '',
+        'location': -1,
+        'blipIds': ['blip-1']
+    }
 }
 
 TEST_BLIP_DATA = {
@@ -52,6 +57,8 @@ TEST_BLIP_DATA = {
     'waveId': TEST_WAVELET_DATA['waveId'],
     'elements': {},
     'waveletId': TEST_WAVELET_DATA['waveletId'],
+    'replyThreadIds': [],
+    'threadId': ''
 }
 
 
@@ -67,7 +74,6 @@ class TestWavelet(unittest.TestCase):
     self.all_blips[self.blip.blip_id] = self.blip
     self.wavelet = wavelet.Wavelet(TEST_WAVELET_DATA,
                                    self.all_blips,
-                                   None,
                                    self.operation_queue)
     self.wavelet.robot_address = ROBOT_NAME
 
@@ -84,6 +90,11 @@ class TestWavelet(unittest.TestCase):
     self.assertEquals(TEST_WAVELET_DATA['title'], w.title)
     self.assertEquals(TEST_WAVELET_DATA['waveId'], w.wave_id)
     self.assertEquals(TEST_WAVELET_DATA['waveletId'], w.wavelet_id)
+    self.assertEquals(TEST_WAVELET_DATA['rootThread']['id'], w.root_thread.id)
+    self.assertEquals(TEST_WAVELET_DATA['rootThread']['location'],
+                      w.root_thread.location)
+    self.assertEquals(len(TEST_WAVELET_DATA['rootThread']['blipIds']),
+                      len(w.root_thread.blips))
     self.assertEquals('test.com', w.domain)
 
   def testWaveletMethods(self):
@@ -113,11 +124,12 @@ class TestWavelet(unittest.TestCase):
 
   def testSetTitle(self):
     self.blip._content = '\nOld title\n\nContent'
-    self.wavelet.title = 'New title'
+    self.wavelet.title = 'New title \xd0\xb0\xd0\xb1\xd0\xb2'
     self.assertEquals(1, len(self.operation_queue))
     self.assertEquals('wavelet.setTitle',
                       self.operation_queue.serialize()[1]['method'])
-    self.assertEquals('\nNew title\n\nContent', self.blip._content)
+    self.assertEquals(u'\nNew title \u0430\u0431\u0432\n\nContent',
+                      self.blip._content)
 
   def testSetTitleAdjustRootBlipWithOneLineProperly(self):
     self.blip._content = '\nOld title'
@@ -159,6 +171,7 @@ class TestWavelet(unittest.TestCase):
     self.wavelet.title = 'A wavelet title'
     self.blip.append(element.Image(url='http://www.google.com/logos/clickortreat1.gif',
                               width=320, height=118))
+    self.blip.append(element.Attachment(caption='fake', data='fake data'))
     self.blip.append(element.Line(line_type='li', indent='2'))
     self.blip.append('bulleted!')
     self.blip.append(element.Installer(

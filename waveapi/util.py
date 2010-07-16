@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.4
 #
 # Copyright (C) 2009 Google Inc.
 #
@@ -21,7 +21,13 @@ import re
 CUSTOM_SERIALIZE_METHOD_NAME = 'serialize'
 
 MARKUP_RE = re.compile(r'<([^>]*?)>')
+RESERVED_PROXY_FOR_CHARS_RE = re.compile(ur'[\s\u0000-\u001F@,:<>\u007F]')
 
+def force_unicode(object):
+  """ Return the Unicode string version of object, with UTF-8 encoding. """
+  if isinstance(object, unicode):
+    return object
+  return unicode(str(object), 'utf-8')
 
 def parse_markup(markup):
   """Parses a bit of markup into robot compatible text.
@@ -74,13 +80,6 @@ def lower_camel_case(s):
 def non_none_dict(d):
   """return a copy of the dictionary without none values."""
   return dict([a for a in d.items() if not a[1] is None])
-
-def force_string(item):
-  """force into a string if it is not already a string or unicode."""
-  if not isinstance(item, basestring):
-    return str(item)
-  else:
-    return item
 
 def _serialize_attributes(obj):
   """Serializes attributes of an instance.
@@ -147,6 +146,42 @@ def serialize(obj):
     return [serialize(v) for v in obj]
   return obj
 
+def is_valid_proxy_for_id(s):
+  """ Checks if the given string is a valid proxy id.
+
+  This method asserts whether the string contains reserved characters or not.
+  This check is to ensure that when we concatenate the robot id and the proxy
+  id, it doesn't result in an invalid participant id.
+
+  The reserved characters are:
+  - whitespaces
+  - non-printing characters: decimal 0 - 31 (hex 00 - 1F), and decimal 127
+    (hex 7F)
+  - @, comma, :, <, and >
+  If you need to pass in an arbitrary string as the proxy id, please consider
+  encoding the string with a URL encoder (for example, urllib.quote_plus) or
+  base64 encoder (for example, base64.b64encode) first.
+
+  Args:
+    s: the string to be checked.
+
+  Returns:
+    True if the string is a valid proxy for id.
+  """
+  return RESERVED_PROXY_FOR_CHARS_RE.search(s) == None
+
+def check_is_valid_proxy_for_id(s):
+  """ Checks if the given string is a valid proxy id.
+
+  Please see isValidProxyForId(String) for more details on the assertion. This
+  method raises a ValueError exception if the input string is not a valid proxy
+  id.
+
+  Args:
+    s: the string to be checked.
+  """
+  if s != None and not is_valid_proxy_for_id(s):
+    raise ValueError(s + ' is not a valid proxy for id.')
 
 class StringEnum(object):
   """Enum like class that is configured with a list of values.

@@ -26,7 +26,7 @@ import util
 import sys
 
 
-PROTOCOL_VERSION = '0.2'
+PROTOCOL_VERSION = '0.22'
 
 # Operation Types
 WAVELET_APPEND_BLIP = 'wavelet.appendBlip'
@@ -42,8 +42,12 @@ DOCUMENT_INLINE_BLIP_INSERT = 'document.inlineBlip.insert'
 DOCUMENT_MODIFY = 'document.modify'
 ROBOT_CREATE_WAVELET = 'robot.createWavelet'
 ROBOT_FETCH_WAVE = 'robot.fetchWave'
-ROBOT_NOTIFY_CAPABILITIES_HASH = 'robot.notifyCapabilitiesHash'
+ROBOT_NOTIFY = 'robot.notifyCapabilitiesHash'
+ROBOT_SEARCH = 'robot.search'
 
+# Assign always NOTIFY_OP_ID to the notify operation so
+# we can easily filter it out later
+NOTIFY_OP_ID = '0'
 
 class Operation(object):
   """Represents a generic operation applied on the server.
@@ -126,7 +130,7 @@ class OperationQueue(object):
 
   def __init__(self, proxy_for_id=None):
     self.__pending = []
-    self._capability_hash = 0
+    self._capability_hash = None
     self._proxy_for_id = proxy_for_id
 
   def _new_blipdata(self, wave_id, wavelet_id, initial_content='',
@@ -184,11 +188,13 @@ class OperationQueue(object):
   def set_capability_hash(self, capability_hash):
     self._capability_hash = capability_hash
 
-  def serialize(self):
-    first = Operation(ROBOT_NOTIFY_CAPABILITIES_HASH,
-                      '0',
-                      {'capabilitiesHash': self._capability_hash})
+  def serialize(self, method_prefix=''):
+    first = Operation(ROBOT_NOTIFY,
+                      NOTIFY_OP_ID,
+                      {'capabilitiesHash': self._capability_hash,
+                       'protocolVersion': PROTOCOL_VERSION})
     operations = [first] + self.__pending
+    return [op.serialize(method_prefix=method_prefix) for op in operations]
     res = util.serialize(operations)
     return res
 
@@ -202,8 +208,10 @@ class OperationQueue(object):
     if props is None:
       props = {}
     props.update(kwprops)
-    props['waveId'] = wave_id
-    props['waveletId'] = wavelet_id
+    if not wave_id is None:
+      props['waveId'] = wave_id
+    if not wavelet_id is None:
+      props['waveletId'] = wavelet_id
     if self._proxy_for_id:
       props['proxyingFor'] = self._proxy_for_id
     operation = Operation(method,
@@ -279,6 +287,27 @@ class OperationQueue(object):
     op.set_optional('message', message)
     return blip_data, wavelet_data
 
+  def robot_search(self, query, index=None, num_results=None):
+    """Execute a search request.
+
+    For now this only makes sense in the data API. Wave does not maintain
+    an index for robots so no results will be returned in that scenario.
+
+    Args:
+      query: what to search for
+      index: what index to search from
+      num_results: how many results to return
+    Returns:
+      The operation created.
+    """
+    op = self.new_operation(
+        ROBOT_SEARCH, wave_id=None, wavelet_id=None, query=query)
+    if not index is None:
+      op.set_param('index', index)
+    if not num_results is None:
+      op.set_param('numResults', num_results)
+    return op
+
   def robot_fetch_wave(self, wave_id, wavelet_id):
     """Requests a snapshot of the specified wave.
 
@@ -316,7 +345,7 @@ class OperationQueue(object):
     Returns:
       data for the root_blip, wavelet
     """
-    return self.new_operation(WAVELET_MODIFY_PARTICIPANT_ROLE, wave_id, 
+    return self.new_operation(WAVELET_MODIFY_PARTICIPANT_ROLE, wave_id,
                               wavelet_id, participantId=participant_id,
                               participantRole=role)
 
